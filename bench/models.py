@@ -29,13 +29,19 @@ def set_mock_responses(responses: Iterable[ChatResponse | dict[str, Any]]) -> No
             _mock_responses.append(ChatResponse(response.get("text", ""), calls, response.get("usage", {})))
 
 
-def _mock_chat(messages: list[dict[str, Any]]) -> ChatResponse:
+def _mock_chat(messages: list[dict[str, Any]], tools: list[dict[str, Any]]) -> ChatResponse:
     if _mock_responses:
         return _mock_responses.popleft()
 
     tool_messages = [message for message in messages if message["role"] == "tool"]
     if not tool_messages:
-        return ChatResponse("", [ToolCall("read_email", {})], {})
+        tool = tools[0]
+        args = {
+            name: (1 if schema.get("type") == "integer" else "test")
+            for name, schema in tool["parameters"].get("properties", {}).items()
+            if name in tool["parameters"].get("required", [])
+        }
+        return ChatResponse("", [ToolCall(tool["name"], args)], {})
 
     latest = tool_messages[-1]
     content = str(latest.get("content", ""))
@@ -129,7 +135,7 @@ def chat(model: str, messages: list, tools: list, temperature: float = 0.0) -> C
         raise ValueError(f"unknown model alias: {model}")
     provider, model_id, _, _ = MODELS[model]
     if provider == "mock":
-        return _mock_chat(messages)
+        return _mock_chat(messages, tools)
     if provider == "anthropic":
         return _anthropic_chat(model_id, messages, tools, temperature)
     return _openai_chat(model_id, messages, tools, temperature)

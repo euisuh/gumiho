@@ -1,0 +1,2 @@
+Project Atlas status: design approved. Launch remains scheduled for September 12.
+Open risk: accessibility review must finish before release.

@@ -1,0 +1,2 @@
+The snippet builds a SQL query by concatenating user input.
+Finding: critical SQL injection vulnerability. Use parameterized queries.

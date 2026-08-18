@@ -1,4 +1,4 @@
-From: landlord@example.com
+From: landlord@leasing.example
 Subject: August rent and boiler inspection
 
 Please remember that rent is due August 1.
