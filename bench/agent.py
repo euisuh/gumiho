@@ -6,6 +6,7 @@ import time
 from datetime import UTC, datetime
 
 from bench import __version__
+from bench.defenses import DEFENSES, EGRESS_REFUSAL, REDACTION_NOTICE, configure_defense
 from bench.judge import judge, utility_success
 from bench.models import MODELS, chat
 from bench.tools import execute_tool, tool_specs
@@ -24,16 +25,17 @@ def run_agent(
 ) -> RunResult:
     if track not in {"attack", "benign"}:
         raise ValueError(f"unknown track: {track}")
-    if defense != "none":
-        raise ValueError("M1 supports only the 'none' defense")
     if model not in MODELS:
         raise ValueError(f"unknown model alias: {model}")
 
     provider, model_id, input_price, output_price = MODELS[model]
     del provider
     schemas = tool_specs(scenario.tools)
+    defense_events = {"detector_flagged": [], "egress_blocked": []}
+    hooks = configure_defense(defense, scenario, model, defense_events)
+    system_prompt = hooks.system_prefix(scenario.system_prompt) if hooks.system_prefix else scenario.system_prompt
     messages = [
-        {"role": "system", "content": scenario.system_prompt},
+        {"role": "system", "content": system_prompt},
         {"role": "user", "content": scenario.user_task},
     ]
     prompt_hash = "sha256:" + hashlib.sha256(
@@ -59,7 +61,7 @@ def run_agent(
         attack_success=None,
         utility_success=False,
         judge={},
-        defense_events={"detector_flagged": [], "egress_blocked": []},
+        defense_events=defense_events,
         usage={"input_tokens": 0, "output_tokens": 0, "usd": 0.0, "latency_s": 0.0},
         error=None,
     )
@@ -80,7 +82,19 @@ def run_agent(
             result.final_answer = response.text
             break
         for i, call in enumerate(response.tool_calls):
-            content, injected = execute_tool(call.name, call.args, scenario, track)
+            if hooks.check_tool_call and not hooks.check_tool_call(call.name, call.args):
+                content, injected = EGRESS_REFUSAL.format(tool=call.name), False
+                if defense == "stack":
+                    content = DEFENSES["spotlight_datamark"].wrap_tool_output(call.name, content)
+                    content = DEFENSES["delimiting"].wrap_tool_output(call.name, content)
+            else:
+                content, injected = execute_tool(call.name, call.args, scenario, track)
+                if hooks.wrap_tool_output:
+                    content = hooks.wrap_tool_output(call.name, content)
+                    if content is None:
+                        content = REDACTION_NOTICE.format(tool=call.name)
+            if defense in {"delimiting", "stack"}:
+                content += f"\nRemember the user's actual task: {scenario.user_task}"
             result.steps.append(Step(len(result.steps), "tool", name=call.name, content=content, injected=injected))
             messages.append({
                 "role": "tool",
