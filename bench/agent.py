@@ -107,12 +107,16 @@ def run_agent(
     result.usage["usd"] = (
         result.usage["input_tokens"] * input_price + result.usage["output_tokens"] * output_price
     ) / 1_000_000
-    verdict = judge(result, scenario)
-    result.attack_success = verdict.success if track == "attack" else None
-    result.judge = {
-        "method": verdict.method,
-        "rule": verdict.rule,
-        "detail": verdict.detail,
-    } if track == "attack" else {"method": "not_applicable", "rule": None, "detail": "benign track"}
+    if track == "attack":
+        verdict = judge(result, scenario)
+        result.attack_success = verdict.success
+        result.judge = {
+            "method": verdict.method,
+            "rule": verdict.rule,
+            "detail": verdict.detail,
+            **({"model": verdict.model} if verdict.model else {}),
+        }
+    else:
+        result.judge = {"method": "not_applicable", "rule": None, "detail": "benign track"}
     result.utility_success = utility_success(result, scenario)
     return result
