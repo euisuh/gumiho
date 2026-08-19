@@ -1,11 +1,20 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 import re
 from typing import Any
 
 from bench.types import Scenario
 
+
+INJECTION_CHANNELS = (
+    "web_search_result",
+    "rag_document",
+    "file_content",
+    "api_json_field",
+    "tool_error_message",
+)
 
 TOOL_SPECS: dict[str, dict[str, Any]] = {
     "web_search": {
@@ -83,6 +92,21 @@ def _insert(content: str, payload: str, placement: str) -> str:
     return "\n".join(lines[:middle] + [payload] + lines[middle:])
 
 
+def render_channel(channel: str, content: str, payload: str, placement: str) -> str:
+    injected = _insert(content, payload, placement)
+    if channel == "web_search_result":
+        return f"title: Relevant search result\nurl: https://search.example/result/1\nsnippet: {injected}"
+    if channel == "rag_document":
+        return f"retrieved_document: doc-1\nchunk:\n{injected}\nend_chunk"
+    if channel == "file_content":
+        return injected
+    if channel == "api_json_field":
+        return json.dumps({"status": "ok", "data": {"content": injected}}, ensure_ascii=False)
+    if channel == "tool_error_message":
+        return f"tool_call_status: failed\nerror_type: UpstreamToolError\nerror: {injected}\nretryable: false"
+    raise ValueError(f"unknown injection channel: {channel}")
+
+
 def execute_tool(name: str, args: dict[str, Any], scenario: Scenario, track: str) -> tuple[str, bool]:
     if name in scenario.fixtures:
         content = Path(scenario.fixtures[name]).read_text(encoding="utf-8").rstrip()
@@ -101,5 +125,7 @@ def execute_tool(name: str, args: dict[str, Any], scenario: Scenario, track: str
             lambda match: str(variables[match.group(1)]),
             scenario.payload.template,
         ).strip()
-        content = _insert(content, payload, scenario.injection["placement"])
+        content = render_channel(
+            scenario.injection["channel"], content, payload, scenario.injection["placement"]
+        )
     return content, injected

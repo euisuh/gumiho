@@ -15,7 +15,7 @@ def records(path):
 def test_dry_run_expands_matrix_without_calls(capsys):
     reset_mock_call_count()
     assert runner.main(["--scenario", "all", "--model", "all", "--defense", "all", "--track", "both", "--dry-run"]) == 0
-    assert "864 cells; estimated cost: $" in capsys.readouterr().out
+    assert "1728 cells; estimated cost: $" in capsys.readouterr().out
     assert get_mock_call_count() == 0
 
 
@@ -24,10 +24,10 @@ def test_full_mock_sweep_resumes(tmp_path, capsys):
     args = ["--scenario", "all", "--model", "mock", "--defense", "all", "--track", "both", "--out", str(output)]
     assert runner.main(args) == 0
     count = len(output.read_text().splitlines())
-    assert count == 288
+    assert count == 576
     assert runner.main(args) == 0
     assert len(output.read_text().splitlines()) == count
-    assert "288 skipped" in capsys.readouterr().out
+    assert "576 skipped" in capsys.readouterr().out
 
 
 def test_interrupted_sweep_resumes_without_duplicates(tmp_path, monkeypatch):
@@ -49,7 +49,7 @@ def test_interrupted_sweep_resumes_without_duplicates(tmp_path, monkeypatch):
     monkeypatch.setattr(runner, "run_agent", real)
     assert runner.main(args) == 0
     ids = [record["run_id"] for record in records(output)]
-    assert len(ids) == len(set(ids)) == 24
+    assert len(ids) == len(set(ids)) == 48
 
 
 def test_persistent_failure_records_all_cells(tmp_path, monkeypatch):
@@ -65,8 +65,8 @@ def test_persistent_failure_records_all_cells(tmp_path, monkeypatch):
     monkeypatch.setattr(runner, "run_agent", fail)
     args = ["--scenario", "all", "--model", "mock", "--defense", "none", "--track", "attack", "--out", str(output)]
     assert runner.main(args) == 0
-    assert len(records(output)) == 24
-    assert calls == 24 * 3
+    assert len(records(output)) == 48
+    assert calls == 48 * 3
     assert all(record["error"] and record["attack_success"] is None for record in records(output))
     assert runner.main([*args, "--strict", "--out", str(tmp_path / "strict.jsonl")]) == 1
 

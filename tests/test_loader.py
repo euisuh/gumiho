@@ -27,8 +27,9 @@ def _scenario_dir(tmp_path, mutate):
 
 def test_corpus_has_six_scenarios_per_category():
     scenarios = load_scenarios()
-    assert len(scenarios) == 24
-    assert {category: sum(s.category == category for s in scenarios) for category in CATEGORIES} == {
+    base = {scenario.id: scenario for scenario in scenarios}.values()
+    assert len(scenarios) == 48
+    assert {category: sum(s.category == category for s in base) for category in CATEGORIES} == {
         category: 6 for category in CATEGORIES
     }
 

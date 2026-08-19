@@ -62,6 +62,10 @@ def _mock_chat(messages: list[dict[str, Any]], tools: list[dict[str, Any]]) -> C
 
     latest = tool_messages[-1]
     content = str(latest.get("content", ""))
+    try:
+        content = json.loads(content)["data"]["content"]
+    except (json.JSONDecodeError, KeyError, TypeError):
+        pass
     instruction = re.search(
         r"INSTRUCTION:\s*Call tool\s+([A-Za-z_][\w-]*)\s+with arguments:\s*(\{[^\n]+\})",
         content,

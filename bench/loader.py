@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import re
 from collections import Counter
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
@@ -10,7 +11,7 @@ from urllib.parse import urlsplit
 import yaml
 
 from bench.types import Payload, Scenario
-from bench.tools import TOOL_SPECS
+from bench.tools import INJECTION_CHANNELS, TOOL_SPECS
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -23,7 +24,7 @@ REQUIRED_SCENARIO_KEYS = {
     "fixtures", "injection", "success", "utility",
 }
 CATEGORIES = {"data_exfiltration", "unauthorized_action", "content_manipulation", "denial_of_service"}
-ALLOWED_CHANNELS = {"web_search_result", "rag_document", "file_content", "api_json_field", "tool_error_message"}
+ALLOWED_CHANNELS = set(INJECTION_CHANNELS)
 CANARY = re.compile(r"CANARY-[0-9A-F]{4}\b")
 CANARY_LIKE = re.compile(r"CANARY-[A-Za-z0-9_-]+")
 EMAIL = re.compile(r"(?<![\w.+-])[\w.+-]+@([A-Za-z0-9.-]+)")
@@ -118,17 +119,27 @@ def load_scenario(name: str, scenarios_dir: Path = SCENARIOS) -> Scenario:
 
 
 def load_scenarios(scenarios_dir: Path = SCENARIOS) -> list[Scenario]:
-    return [load_scenario(path.stem, scenarios_dir) for path in sorted(scenarios_dir.glob("*.yaml")) if path.name != "payloads.yaml"]
+    scenarios = []
+    for path in sorted(scenarios_dir.glob("*.yaml")):
+        if path.name == "payloads.yaml":
+            continue
+        scenario = load_scenario(path.stem, scenarios_dir)
+        channels = INJECTION_CHANNELS if _yaml(path).get("channel_ablation") is True else (scenario.injection["channel"],)
+        scenarios.extend(
+            replace(scenario, injection={**scenario.injection, "channel": channel})
+            for channel in channels
+        )
+    return scenarios
 
 
 def validate(scenarios_dir: Path = SCENARIOS) -> list[Scenario]:
     scenarios = load_scenarios(scenarios_dir)
-    ids = [scenario.id for scenario in scenarios]
-    if len(ids) != len(set(ids)):
-        raise ValueError("duplicate scenario id")
-    counts = Counter(scenario.category for scenario in scenarios)
-    if len(scenarios) != 24 or any(counts[category] != 6 for category in sorted(CATEGORIES)):
-        raise ValueError(f"expected 24 scenarios with 6 per category; found {len(scenarios)}: {dict(counts)}")
+    categories = {scenario.id: scenario.category for scenario in scenarios}
+    counts = Counter(categories.values())
+    if len(categories) != 24 or any(counts[category] != 6 for category in sorted(CATEGORIES)):
+        raise ValueError(f"expected 24 scenarios with 6 per category; found {len(categories)}: {dict(counts)}")
+    if len(scenarios) != 48:
+        raise ValueError(f"expected 48 run-units; found {len(scenarios)}")
     if len(load_payloads(scenarios_dir / "payloads.yaml")) < 12:
         raise ValueError("expected at least 12 payload templates")
     return scenarios
@@ -142,14 +153,14 @@ def main(argv: list[str] | None = None) -> int:
         parser.print_help()
         return 0
     scenarios = validate()
-    print("scenario_id                 category")
-    print("--------------------------  --------------------")
+    print("scenario_id                 variant                         category")
+    print("--------------------------  ------------------------------  --------------------")
     for scenario in scenarios:
-        print(f"{scenario.id:<26}  {scenario.category}")
+        print(f"{scenario.id:<26}  channel={scenario.injection['channel']:<22}  {scenario.category}")
     print("\ncounts")
-    for category, count in sorted(Counter(s.category for s in scenarios).items()):
+    for category, count in sorted(Counter({s.id: s.category for s in scenarios}.values()).items()):
         print(f"{category:<20} {count}")
-    print(f"total                {len(scenarios)}")
+    print(f"total                {len(set(s.id for s in scenarios))} scenarios, {len(scenarios)} run-units")
     return 0
 
 
