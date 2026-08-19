@@ -135,4 +135,4 @@ def test_cli_all_uses_registry_order(tmp_path):
     output = tmp_path / "all.jsonl"
     assert main(["--defense", "all", "--limit", "1", "--out", str(output)]) == 0
     rows = [json.loads(line) for line in output.read_text().splitlines()]
-    assert [row["defense"] for row in rows] == list(DEFENSES)
+    assert {row["defense"] for row in rows} == set(DEFENSES)

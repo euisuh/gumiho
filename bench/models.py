@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import threading
 from collections import deque
 from collections.abc import Iterable
 from typing import Any
@@ -16,6 +17,19 @@ MODELS: dict[str, tuple[str, str, float, float]] = {
     "gpt-4.1": ("openai", "gpt-4.1-2025-04-14", 2.0, 8.0),
 }
 _mock_responses: deque[ChatResponse] = deque()
+_mock_call_count = 0
+_mock_lock = threading.Lock()
+
+
+def reset_mock_call_count() -> None:
+    global _mock_call_count
+    with _mock_lock:
+        _mock_call_count = 0
+
+
+def get_mock_call_count() -> int:
+    with _mock_lock:
+        return _mock_call_count
 
 
 def set_mock_responses(responses: Iterable[ChatResponse | dict[str, Any]]) -> None:
@@ -30,6 +44,9 @@ def set_mock_responses(responses: Iterable[ChatResponse | dict[str, Any]]) -> No
 
 
 def _mock_chat(messages: list[dict[str, Any]], tools: list[dict[str, Any]]) -> ChatResponse:
+    global _mock_call_count
+    with _mock_lock:
+        _mock_call_count += 1
     if _mock_responses:
         return _mock_responses.popleft()
 
