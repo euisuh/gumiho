@@ -258,7 +258,7 @@ JSON out. Everything after layers onto a harness that stays green.
 > **Preamble for every task below.** Each task is written to be pasted into a
 > single `codex "..."` invocation. Prepend this to each:
 >
-> *"Repo: `/Users/uiseo/Documents/research/gumiho` — a Python
+> *"Repo: `gumiho` — a Python
 > benchmark measuring indirect prompt injection against tool-using LLM agents
 > (malicious instructions hidden in tool output) and the effectiveness of
 > mitigations. Python 3.12+, `uv`, `pytest`. Read `PLAN.md` §3 for the repo
