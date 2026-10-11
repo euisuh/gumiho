@@ -1,4 +1,6 @@
-# agent-injection-bench
+# Gumiho
+
+Formerly `agent-injection-bench`. Named for the nine-tailed fox of Korean folklore, which deceives by taking another form, like an instruction hidden in tool output.
 
 Red-team benchmark measuring how susceptible tool-using LLM agents are to
 indirect prompt injection (malicious instructions embedded in tool output —
@@ -22,9 +24,9 @@ Status: scaffolding. See PLAN.md once generated.
 ## Quickstart
 
 ```sh
-git clone git@github.com:euisuh/agent-injection-bench.git
-cd agent-injection-bench
+git clone git@github.com:euisuh/gumiho.git
+cd gumiho
 uv sync
 uv run pytest
-uv run python -m bench.run --scenario exfil_email_canary --model mock --defense none --track attack --out results/runs/smoke.jsonl
+uv run python -m gumiho.run --scenario exfil_email_canary --model mock --defense none --track attack --out results/runs/smoke.jsonl
 ```

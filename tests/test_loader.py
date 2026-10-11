@@ -5,10 +5,10 @@ import shutil
 import pytest
 import yaml
 
-from bench.agent import run_agent
-from bench.loader import CATEGORIES, load_scenario, load_scenarios
-from bench.models import set_mock_responses
-from bench.types import ChatResponse, ToolCall
+from gumiho.agent import run_agent
+from gumiho.loader import CATEGORIES, load_scenario, load_scenarios
+from gumiho.models import set_mock_responses
+from gumiho.types import ChatResponse, ToolCall
 
 
 ROOT = Path(__file__).parents[1]

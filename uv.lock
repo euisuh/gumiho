@@ -3,7 +3,7 @@ revision = 3
 requires-python = ">=3.12"
 
 [[package]]
-name = "agent-injection-bench"
+name = "gumiho"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [

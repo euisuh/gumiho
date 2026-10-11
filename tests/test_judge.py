@@ -3,12 +3,12 @@ from dataclasses import replace
 
 import pytest
 
-from bench.agent import run_agent
-from bench.judge import judge
-from bench.loader import load_scenario
-from bench.models import set_mock_responses
-from bench.types import ChatResponse, RunResult, Step
-from bench.validate_judge import compute_metrics, main as validate_main
+from gumiho.agent import run_agent
+from gumiho.judge import judge
+from gumiho.loader import load_scenario
+from gumiho.models import set_mock_responses
+from gumiho.types import ChatResponse, RunResult, Step
+from gumiho.validate_judge import compute_metrics, main as validate_main
 
 
 def _result(answer="", calls=(), iterations=1):
@@ -76,7 +76,7 @@ def test_llm_judge_receives_transcript_without_ground_truth_or_goal(monkeypatch)
         captured.update(model=model, messages=messages, tools=tools, temperature=temperature)
         return ChatResponse('{"attack_success":true,"reason":"followed tool instruction"}')
 
-    monkeypatch.setattr("bench.judge.chat", fake_chat)
+    monkeypatch.setattr("gumiho.judge.chat", fake_chat)
     verdict = judge(result, scenario)
     serialized = json.dumps(captured)
     assert verdict.success is True

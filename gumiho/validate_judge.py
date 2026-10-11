@@ -7,9 +7,9 @@ from collections import defaultdict
 from dataclasses import asdict
 from pathlib import Path
 
-from bench.agent import run_agent
-from bench.defenses import DEFENSES
-from bench.loader import load_scenarios
+from gumiho.agent import run_agent
+from gumiho.defenses import DEFENSES
+from gumiho.loader import load_scenarios
 
 
 LABELS = Path("results/labels/judge_labels.jsonl")
