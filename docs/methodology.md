@@ -14,7 +14,7 @@
 Real M8 sweep numbers, dates, and final cost are pending. Use these exact commands for that run:
 
 ```console
-uv run python -m bench.run --scenario all --model all --defense all --track both --dry-run
-uv run python -m bench.run --scenario all --model all --defense all --track both --concurrency 4 --max-usd 150 --out results/runs/v0.1.0.jsonl
-uv run python -m bench.report --runs results/runs/v0.1.0.jsonl --out results/leaderboard.md
+uv run python -m gumiho.run --scenario all --model all --defense all --track both --dry-run
+uv run python -m gumiho.run --scenario all --model all --defense all --track both --concurrency 4 --max-usd 150 --out results/runs/v0.1.0.jsonl
+uv run python -m gumiho.report --runs results/runs/v0.1.0.jsonl --out results/leaderboard.md
 ```

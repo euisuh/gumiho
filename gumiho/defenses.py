@@ -5,8 +5,8 @@ import re
 from collections.abc import Callable
 from typing import NamedTuple
 
-from bench.models import MODELS, chat
-from bench.types import Scenario
+from gumiho.models import MODELS, chat
+from gumiho.types import Scenario
 
 
 MARKER = "░"

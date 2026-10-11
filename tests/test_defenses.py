@@ -4,8 +4,8 @@ import json
 from dataclasses import replace
 from pathlib import Path
 
-from bench.agent import run_agent
-from bench.defenses import (
+from gumiho.agent import run_agent
+from gumiho.defenses import (
     CLOSING_TAG,
     DEFENSES,
     DETECTOR_PROMPT,
@@ -13,10 +13,10 @@ from bench.defenses import (
     MARKER,
     REDACTION_NOTICE,
 )
-from bench.loader import load_scenario, load_scenarios
-from bench.models import set_mock_responses
-from bench.run import main
-from bench.types import ChatResponse, ToolCall
+from gumiho.loader import load_scenario, load_scenarios
+from gumiho.models import set_mock_responses
+from gumiho.run import main
+from gumiho.types import ChatResponse, ToolCall
 
 
 def test_delimiting_escapes_closing_tag_and_repeats_task():
@@ -76,7 +76,7 @@ def test_detector_error_fails_closed(monkeypatch):
     def fail(*_args, **_kwargs):
         raise RuntimeError("detector unavailable")
 
-    monkeypatch.setattr("bench.defenses.chat", fail)
+    monkeypatch.setattr("gumiho.defenses.chat", fail)
     result = run_agent(scenario, "mock", "benign", "llm_detector")
     tool = next(step for step in result.steps if step.role == "tool")
     assert tool.content == REDACTION_NOTICE.format(tool="read_email")
