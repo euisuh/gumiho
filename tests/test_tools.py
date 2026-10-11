@@ -2,11 +2,11 @@ import json
 import re
 from dataclasses import replace
 
-from bench.agent import run_agent
-from bench.loader import load_scenario
-from bench.models import set_mock_responses
-from bench.tools import INJECTION_CHANNELS, execute_tool
-from bench.types import ChatResponse, ToolCall
+from gumiho.agent import run_agent
+from gumiho.loader import load_scenario
+from gumiho.models import set_mock_responses
+from gumiho.tools import INJECTION_CHANNELS, execute_tool
+from gumiho.types import ChatResponse, ToolCall
 
 
 def variants():

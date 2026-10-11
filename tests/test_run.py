@@ -4,8 +4,8 @@ import time
 
 import pytest
 
-import bench.run as runner
-from bench.models import get_mock_call_count, reset_mock_call_count
+import gumiho.run as runner
+from gumiho.models import get_mock_call_count, reset_mock_call_count
 
 
 def records(path):

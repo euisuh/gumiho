@@ -3,7 +3,7 @@ import math
 
 import pytest
 
-from bench.report import compute_metrics, main, wilson_interval
+from gumiho.report import compute_metrics, main, wilson_interval
 
 
 def row(track, attack_success, utility_success, *, flagged=False, error=None, seed=0):

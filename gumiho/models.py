@@ -8,7 +8,7 @@ from collections import deque
 from collections.abc import Iterable
 from typing import Any
 
-from bench.types import ChatResponse, ToolCall
+from gumiho.types import ChatResponse, ToolCall
 
 
 MODELS: dict[str, tuple[str, str, float, float]] = {

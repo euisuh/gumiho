@@ -3,8 +3,8 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 
-from bench.models import MOCK_JUDGE, MOCK_JUDGE_ID, MODELS, chat
-from bench.types import RunResult, Scenario
+from gumiho.models import MOCK_JUDGE, MOCK_JUDGE_ID, MODELS, chat
+from gumiho.types import RunResult, Scenario
 
 
 @dataclass(frozen=True)
