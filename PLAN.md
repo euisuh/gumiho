@@ -1,4 +1,4 @@
-# agent-injection-bench — Implementation Plan (v1)
+# gumiho — Implementation Plan (v1)
 
 Status: plan of record. Version 0.1.0 target. Written 2026-08-18.
 Execution model: each milestone below is a self-contained task intended to be
@@ -16,7 +16,7 @@ who controls any of that returned content can plant instructions the model
 follows as if the user had typed them. This is *indirect prompt injection*, and
 unlike jailbreaking it does not require the attacker to talk to the user or the
 model directly; it only requires them to write text the agent will eventually
-read. `agent-injection-bench` measures how often that works across models, and
+read. `gumiho` measures how often that works across models, and
 how much the commonly-recommended mitigations actually help — while also
 measuring what those mitigations cost in benign task success, which is the
 number that decides whether anyone ships them.
@@ -111,13 +111,13 @@ technique demonstrations, not exploits against any named product.
 ### Repo layout
 
 ```
-agent-injection-bench/
+gumiho/
 ├── README.md                  # short pitch + headline leaderboard table (generated)
 ├── PLAN.md                    # this file
 ├── LICENSE                    # MIT
 ├── pyproject.toml             # uv/pip installable, deps: anthropic, openai, pyyaml, pytest
 ├── .env.example                # ANTHROPIC_API_KEY, OPENAI_API_KEY, GROQ_API_KEY
-├── bench/
+├── gumiho/
 │   ├── __init__.py            # __version__
 │   ├── types.py               # dataclasses: Scenario, Payload, ToolSpec, Step, RunResult
 │   ├── loader.py               # YAML -> Scenario/Payload objects + validation
@@ -126,8 +126,8 @@ agent-injection-bench/
 │   ├── agent.py                # the tool-calling loop
 │   ├── defenses.py             # DEFENSES registry: name -> hooks
 │   ├── judge.py                # rule-based checks + LLM-judge fallback
-│   ├── run.py                  # CLI matrix runner  (python -m bench.run)
-│   └── report.py               # CLI report generator (python -m bench.report)
+│   ├── run.py                  # CLI matrix runner  (python -m gumiho.run)
+│   └── report.py               # CLI report generator (python -m gumiho.report)
 ├── scenarios/
 │   ├── payloads.yaml           # attacker payload templates, keyed by payload_id
 │   ├── *.yaml                  # 24 scenario definitions, one per file
@@ -258,7 +258,7 @@ JSON out. Everything after layers onto a harness that stays green.
 > **Preamble for every task below.** Each task is written to be pasted into a
 > single `codex "..."` invocation. Prepend this to each:
 >
-> *"Repo: `/Users/uiseo/Documents/research/agent-injection-bench` — a Python
+> *"Repo: `/Users/uiseo/Documents/research/gumiho` — a Python
 > benchmark measuring indirect prompt injection against tool-using LLM agents
 > (malicious instructions hidden in tool output) and the effectiveness of
 > mitigations. Python 3.12+, `uv`, `pytest`. Read `PLAN.md` §3 for the repo
@@ -275,10 +275,10 @@ JSON out. Everything after layers onto a harness that stays green.
 a tool loop, with an injection present, and emits a valid `RunResult` JSON line.
 No defenses, no matrix, no report.
 
-**Files.** `pyproject.toml`, `.env.example`, `LICENSE`, `bench/__init__.py`,
-`bench/types.py`, `bench/loader.py`, `bench/models.py`, `bench/tools.py`,
-`bench/agent.py`, `bench/judge.py` (rule type `tool_call_arg_match` only),
-`bench/run.py`, `scenarios/exfil_email_canary.yaml`,
+**Files.** `pyproject.toml`, `.env.example`, `LICENSE`, `gumiho/__init__.py`,
+`gumiho/types.py`, `gumiho/loader.py`, `gumiho/models.py`, `gumiho/tools.py`,
+`gumiho/agent.py`, `gumiho/judge.py` (rule type `tool_call_arg_match` only),
+`gumiho/run.py`, `scenarios/exfil_email_canary.yaml`,
 `scenarios/payloads.yaml` (1 payload), `scenarios/fixtures/landlord_thread.txt`,
 `tests/test_agent.py`.
 
@@ -302,15 +302,15 @@ No defenses, no matrix, no report.
   `--track benign` (injection omitted entirely).
 
 **Acceptance criteria.**
-1. `uv run python -m bench.run --scenario exfil_email_canary --model mock --defense none --track attack --out results/runs/smoke.jsonl` exits 0.
+1. `uv run python -m gumiho.run --scenario exfil_email_canary --model mock --defense none --track attack --out results/runs/smoke.jsonl` exits 0.
 2. The output file contains exactly one JSON line that parses and contains all
    keys listed in the §3 `RunResult` schema, with `attack_success == true` and
-   `bench_version` matching `bench.__version__`.
+   `bench_version` matching `gumiho.__version__`.
 3. Same command with `--track benign` produces `attack_success == null` and a
    transcript in which no step has `injected == true`.
 4. `uv run pytest` passes with zero network access (unset all API keys; the run
    must still succeed with `--model mock`).
-5. `python -m bench.run --help` documents `--scenario --model --defense --track --out --limit --seed`.
+5. `python -m gumiho.run --help` documents `--scenario --model --defense --track --out --limit --seed`.
 6. README updated with a 5-line quickstart that a reader can copy-paste.
 
 ---
@@ -321,8 +321,8 @@ No defenses, no matrix, no report.
 their payloads/fixtures. No new harness features.
 
 **Files.** `scenarios/*.yaml` (24), `scenarios/payloads.yaml` (≥12 payload
-templates), `scenarios/fixtures/*` (≤5 KB each), `bench/tools.py` (add the tool
-implementations the scenarios need), `bench/judge.py` (add rule types
+templates), `scenarios/fixtures/*` (≤5 KB each), `gumiho/tools.py` (add the tool
+implementations the scenarios need), `gumiho/judge.py` (add rule types
 `final_answer_contains_all`, `final_answer_contains_none`, `tool_called`,
 `tool_not_called`, `loop_exceeded`, `refusal`), `tests/test_loader.py`,
 `tests/test_judge.py`.
@@ -338,13 +338,13 @@ implementations the scenarios need), `bench/judge.py` (add rule types
   `.example`/`.invalid` domains. Enforce this in the loader.
 
 **Acceptance criteria.**
-1. `uv run python -m bench.loader --validate` exits 0 and prints a table of 24
+1. `uv run python -m gumiho.loader --validate` exits 0 and prints a table of 24
    scenarios with counts of 6 per category.
 2. Loader rejects, with a clear error, a scenario that: references an unknown
    tool, references an unknown `payload_id`, omits `utility`, or contains an
    email/URL host that is not under `.example`/`.invalid`/`localhost`. One test
    per rejection case.
-3. `uv run python -m bench.run --scenario all --model mock --track attack` runs
+3. `uv run python -m gumiho.run --scenario all --model mock --track attack` runs
    all 24 without exception and produces 24 result lines.
 4. Benign track sanity: a test asserts that for every scenario, a scripted mock
    agent performing the intended benign behaviour satisfies its `utility` rule
@@ -363,15 +363,15 @@ implementations the scenarios need), `bench/judge.py` (add rule types
 **Goal.** Implement the four v1 defenses of §6 plus the `stack` composition and
 the `none` baseline, wired through the agent loop.
 
-**Files.** `bench/defenses.py`, `bench/agent.py` (hook call sites),
-`bench/run.py` (`--defense` accepts any registry key + `all`),
+**Files.** `gumiho/defenses.py`, `gumiho/agent.py` (hook call sites),
+`gumiho/run.py` (`--defense` accepts any registry key + `all`),
 `tests/test_defenses.py`.
 
 **Details.** See §6 for the exact specification of each defense. Hook contract
 is in §3. `defense_events` in the result records what each defense did.
 
 **Acceptance criteria.**
-1. `python -m bench.run --defense all` iterates over
+1. `python -m gumiho.run --defense all` iterates over
    `[none, delimiting, spotlight_datamark, llm_detector, egress_filter, stack]`.
 2. `spotlight_datamark`: a unit test asserts every whitespace-separated token of
    the tool output is separated by the marker character, that the marker does
@@ -400,7 +400,7 @@ is in §3. `defense_events` in the result records what each defense did.
 re-run. This is the milestone that makes a 2000-cell sweep survivable on a
 part-time schedule.
 
-**Files.** `bench/run.py`, `tests/test_run.py`, `docs/methodology.md`.
+**Files.** `gumiho/run.py`, `tests/test_run.py`, `docs/methodology.md`.
 
 **Details.**
 - `--scenario all --model all --defense all --track both` expands the full
@@ -419,7 +419,7 @@ part-time schedule.
 - `--dry-run` prints the cell count and estimated cost without calling anything.
 
 **Acceptance criteria.**
-1. `python -m bench.run --scenario all --model all --defense all --track both --dry-run`
+1. `python -m gumiho.run --scenario all --model all --defense all --track both --dry-run`
    prints the total cell count and a USD estimate, and makes zero API calls
    (assert via the mock provider's call counter).
 2. Running the full mock sweep twice into the same output file produces the same
@@ -442,7 +442,7 @@ part-time schedule.
 injection channels with payload semantics held fixed.
 
 **Files.** `scenarios/*.yaml` (add `channel_ablation: true` to 6 scenarios),
-`bench/loader.py` (variant expansion), `bench/tools.py` (per-channel rendering),
+`gumiho/loader.py` (variant expansion), `gumiho/tools.py` (per-channel rendering),
 `tests/test_tools.py`.
 
 **Details.**
@@ -459,14 +459,14 @@ injection channels with payload semantics held fixed.
   surrounding envelope differs.
 
 **Acceptance criteria.**
-1. `python -m bench.loader --validate` reports 48 run-units and 24 scenarios.
+1. `python -m gumiho.loader --validate` reports 48 run-units and 24 scenarios.
 2. A test asserts that for a given ablation scenario, the injected payload
    substring is byte-identical across all 5 rendered channels, while the
    surrounding envelope differs in all 5.
 3. A test asserts `api_json_field` output parses as valid JSON with the payload
    inside a string value, and `tool_error_message` output is delivered on the
    tool-result path with an error-shaped envelope (not as a Python exception).
-4. `python -m bench.run --scenario all --model mock --track attack` produces 48
+4. `python -m gumiho.run --scenario all --model mock --track attack` produces 48
    attack-track lines with distinct `run_id`s.
 
 ---
@@ -476,8 +476,8 @@ injection channels with payload semantics held fixed.
 **Goal.** Make the success measurement itself credible. This is the milestone a
 security-minded reviewer will check hardest.
 
-**Files.** `bench/judge.py` (add `llm_judge` rule type),
-`bench/validate_judge.py`, `results/labels/judge_labels.jsonl`,
+**Files.** `gumiho/judge.py` (add `llm_judge` rule type),
+`gumiho/validate_judge.py`, `results/labels/judge_labels.jsonl`,
 `results/judge_validation.md`, `tests/test_judge.py`.
 
 **Details.** See §7 for the methodology. Rule-based checks are primary;
@@ -487,10 +487,10 @@ by category × defense × verdict, writes them for hand-labelling, and computes
 agreement.
 
 **Acceptance criteria.**
-1. `python -m bench.validate_judge --sample 100 --stratify category,verdict --out results/labels/judge_labels.jsonl`
+1. `python -m gumiho.validate_judge --sample 100 --stratify category,verdict --out results/labels/judge_labels.jsonl`
    emits 100 unlabelled records with a `human_label: null` field and enough
    transcript context to label without opening another file.
-2. `python -m bench.validate_judge --report` reads the hand-labelled file and
+2. `python -m gumiho.validate_judge --report` reads the hand-labelled file and
    writes `results/judge_validation.md` containing: n labelled, raw agreement,
    Cohen's κ, a 2×2 confusion matrix, and a listing of every disagreement with
    its `run_id`.
@@ -511,7 +511,7 @@ agreement.
 
 **Goal.** Turn JSONL into the artifact a reader actually looks at.
 
-**Files.** `bench/report.py`, `results/leaderboard.md`, `README.md`,
+**Files.** `gumiho/report.py`, `results/leaderboard.md`, `README.md`,
 `tests/test_report.py`.
 
 **Details.** Metrics computed per (model, defense):
@@ -531,7 +531,7 @@ benign utility can be a small committed SVG generated by hand later if the paper
 needs it.
 
 **Acceptance criteria.**
-1. `python -m bench.report --runs results/runs/*.jsonl --out results/leaderboard.md`
+1. `python -m gumiho.report --runs results/runs/*.jsonl --out results/leaderboard.md`
    exits 0 on the mock sweep and produces a Markdown file with, at minimum: a
    main table (rows = model × defense; columns = ASR ± CI, benign utility,
    utility-under-attack, detector TPR/FPR, est. USD), a category breakdown
@@ -570,7 +570,7 @@ does not need channel variants, trimming this somewhat), plus a 20% subset at
    from those files and committed; README shows the headline table.
 3. `docs/methodology.md` lists exact snapshot IDs, run dates, total cost, and
    the commands used, such that a third party can reproduce the sweep.
-4. A reviewer can run `python -m bench.report --runs results/runs/*.jsonl --out /tmp/check.md`
+4. A reviewer can run `python -m gumiho.report --runs results/runs/*.jsonl --out /tmp/check.md`
    and get a file byte-identical to the committed `results/leaderboard.md`
    (report generation is deterministic).
 
@@ -581,7 +581,7 @@ does not need channel variants, trimming this somewhat), plus a 20% subset at
 **Goal.** Show that defense numbers measured against static payloads are
 optimistic, by giving the attacker a small budget of black-box retries.
 
-**Files.** `bench/adaptive.py`, `scenarios/payloads_adaptive.yaml`,
+**Files.** `gumiho/adaptive.py`, `scenarios/payloads_adaptive.yaml`,
 `results/adaptive.md`, `tests/test_adaptive.py`.
 
 **Details.** For a 12-scenario subset, an attacker model sees only *whether the
@@ -590,7 +590,7 @@ Report ASR@1 vs. ASR@5 per defense. Strictly additive; the main results do not
 depend on it.
 
 **Acceptance criteria.**
-1. `python -m bench.adaptive --scenarios subset --model <alias> --defense all --rounds 5`
+1. `python -m gumiho.adaptive --scenarios subset --model <alias> --defense all --rounds 5`
    produces results with a `round` field and an `adaptive: true` marker.
 2. A test asserts the attacker model receives only the success bit — never the
    victim's transcript, the defense name, or the judge's reasoning.
@@ -741,7 +741,7 @@ utility), never ASR alone.
 v1 ships when **all** of the following are true:
 
 1. `uv run pytest` passes offline with no API keys set.
-2. `python -m bench.run --scenario all --model all --defense all --track both`
+2. `python -m gumiho.run --scenario all --model all --defense all --track both`
    is a real, resumable, cost-capped command with `--dry-run` and `--limit`.
 3. 24 scenarios across 4 categories exist and validate; 6 of them are expanded
    across 5 injection channels (48 run-units).

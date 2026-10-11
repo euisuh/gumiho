@@ -10,12 +10,12 @@ from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
 
-from bench import __version__
-from bench.agent import run_agent
-from bench.defenses import DEFENSES
-from bench.loader import load_scenario, load_scenarios
-from bench.models import MODELS
-from bench.types import RunResult, Scenario
+from gumiho import __version__
+from gumiho.agent import run_agent
+from gumiho.defenses import DEFENSES
+from gumiho.loader import load_scenario, load_scenarios
+from gumiho.models import MODELS
+from gumiho.types import RunResult, Scenario
 
 
 DRY_RUN_TOKENS = 1_000

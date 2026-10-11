@@ -5,12 +5,12 @@ import json
 import time
 from datetime import UTC, datetime
 
-from bench import __version__
-from bench.defenses import DEFENSES, EGRESS_REFUSAL, REDACTION_NOTICE, configure_defense
-from bench.judge import judge, utility_success
-from bench.models import MODELS, chat
-from bench.tools import execute_tool, tool_specs
-from bench.types import RunResult, Scenario, Step
+from gumiho import __version__
+from gumiho.defenses import DEFENSES, EGRESS_REFUSAL, REDACTION_NOTICE, configure_defense
+from gumiho.judge import judge, utility_success
+from gumiho.models import MODELS, chat
+from gumiho.tools import execute_tool, tool_specs
+from gumiho.types import RunResult, Scenario, Step
 
 
 MAX_ITERATIONS = 8

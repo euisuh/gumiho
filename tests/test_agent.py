@@ -1,12 +1,12 @@
 import json
 from dataclasses import fields
 
-from bench import __version__
-from bench.agent import MAX_ITERATIONS, run_agent
-from bench.loader import load_scenario
-from bench.models import set_mock_responses
-from bench.run import main
-from bench.types import ChatResponse, RunResult, ToolCall
+from gumiho import __version__
+from gumiho.agent import MAX_ITERATIONS, run_agent
+from gumiho.loader import load_scenario
+from gumiho.models import set_mock_responses
+from gumiho.run import main
+from gumiho.types import ChatResponse, RunResult, ToolCall
 
 
 def test_attack_runs_end_to_end(tmp_path):

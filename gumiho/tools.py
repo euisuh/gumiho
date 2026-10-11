@@ -5,7 +5,7 @@ from pathlib import Path
 import re
 from typing import Any
 
-from bench.types import Scenario
+from gumiho.types import Scenario
 
 
 INJECTION_CHANNELS = (
