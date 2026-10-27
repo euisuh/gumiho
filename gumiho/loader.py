@@ -10,9 +10,8 @@ from urllib.parse import urlsplit
 
 import yaml
 
-from gumiho.types import Payload, Scenario
 from gumiho.tools import INJECTION_CHANNELS, TOOL_SPECS
-
+from gumiho.types import Payload, Scenario
 
 ROOT = Path(__file__).resolve().parents[1]
 SCENARIOS = ROOT / "scenarios"
