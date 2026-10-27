@@ -1,0 +1,43 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      ANTHROPIC_API_KEY: ""
+      OPENAI_API_KEY: ""
+      GROQ_API_KEY: ""
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - run: uv sync --locked
+      - name: Lint
+        run: uvx ruff check .
+      - name: Tests
+        run: uv run pytest -q
+      - name: Validate scenario corpus
+        run: uv run python -m gumiho.loader --validate
+      - name: Offline smoke run (mock model, full matrix, no SDK imported)
+        run: |
+          uv run python - <<'PY'
+          import sys
+          from gumiho import report, run
+          assert run.main(["--model", "mock", "--defense", "all", "--track", "both", "--strict", "--out", "smoke/runs.jsonl"]) == 0
+          assert report.main(["--runs", "smoke/runs.jsonl", "--out", "smoke/leaderboard.md"]) == 0
+          assert "openai" not in sys.modules and "anthropic" not in sys.modules, "mock run imported a provider SDK"
+          PY
+          sed -n '1,20p' smoke/leaderboard.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mock-smoke
+          path: smoke/

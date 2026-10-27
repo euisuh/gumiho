@@ -10,7 +10,6 @@ from typing import Any
 
 from gumiho.types import ChatResponse, ToolCall
 
-
 MODELS: dict[str, tuple[str, str, float, float]] = {
     "mock": ("mock", "mock-v1", 0.0, 0.0),
     "sonnet": ("anthropic", "claude-sonnet-4-20250514", 3.0, 15.0),

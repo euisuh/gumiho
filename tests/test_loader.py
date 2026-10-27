@@ -1,6 +1,5 @@
-from dataclasses import replace
-from pathlib import Path
 import shutil
+from pathlib import Path
 
 import pytest
 import yaml
@@ -9,7 +8,6 @@ from gumiho.agent import run_agent
 from gumiho.loader import CATEGORIES, load_scenario, load_scenarios
 from gumiho.models import set_mock_responses
 from gumiho.types import ChatResponse, ToolCall
-
 
 ROOT = Path(__file__).parents[1]
 

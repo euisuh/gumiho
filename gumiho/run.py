@@ -16,7 +16,6 @@ from gumiho.loader import load_scenario, load_scenarios
 from gumiho.models import MODELS
 from gumiho.types import RunResult, Scenario
 
-
 DRY_RUN_TOKENS = 1_000
 RETRY_DELAYS = (1, 2)
 

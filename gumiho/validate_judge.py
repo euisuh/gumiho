@@ -11,7 +11,6 @@ from gumiho.agent import run_agent
 from gumiho.defenses import DEFENSES
 from gumiho.loader import load_scenarios
 
-
 LABELS = Path("results/labels/judge_labels.jsonl")
 REPORT = Path("results/judge_validation.md")
 

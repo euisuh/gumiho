@@ -7,7 +7,6 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any, Iterable
 
-
 README_START = "<!-- leaderboard:start -->"
 README_END = "<!-- leaderboard:end -->"
 
@@ -171,7 +170,7 @@ def render_report(records: list[dict[str, Any]]) -> tuple[str, str]:
     ablation = [row for row in records if row.get("scenario_id") in ablation_ids]
     channels = sorted({row["variant"] for row in ablation if row.get("track") == "attack"})
     report = (
-        "# Agent Injection Benchmark Leaderboard\n\n"
+        "# Gumiho leaderboard\n\n"
         "Rates exclude errored cells and attack cells without a verdict. Errors count includes both. "
         "ASR confidence intervals are Wilson 95%; deltas and overhead compare with the same-model `none` baseline.\n\n"
         "## Headline\n\n" + headline + "\n\n"
