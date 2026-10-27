@@ -7,7 +7,7 @@
 - Maximum agent iterations: `8`.
 - Default concurrency: `4` threads.
 - Dry-run estimate assumption: 1,000 input and 1,000 output tokens per cell. Recorded cost uses provider-reported token usage and the `MODELS` price table.
-- Each JSONL line is flushed after writing. Existing `run_id` values are skipped when a run resumes.
+- Each JSONL line is flushed after writing. Existing `run_id` values are skipped when a run resumes; `run_id` includes a hash of the scenario's content, so an edited scenario is re-run.
 
 ## Recorded-run commands
 

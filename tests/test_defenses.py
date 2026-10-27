@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import replace
+from dataclasses import asdict, replace
 from pathlib import Path
 
 from gumiho.agent import run_agent
@@ -15,6 +15,7 @@ from gumiho.defenses import (
 )
 from gumiho.loader import load_scenario, load_scenarios
 from gumiho.models import set_mock_responses
+from gumiho.report import compute_metrics
 from gumiho.run import main
 from gumiho.types import ChatResponse, ToolCall
 
@@ -136,3 +137,19 @@ def test_cli_all_uses_registry_order(tmp_path):
     assert main(["--defense", "all", "--limit", "1", "--out", str(output)]) == 0
     rows = [json.loads(line) for line in output.read_text().splitlines()]
     assert {row["defense"] for row in rows} == set(DEFENSES)
+
+
+def test_mock_detector_is_a_heuristic_not_flag_everything():
+    # Detector metrics from a mock sweep must be able to catch a regression:
+    # no false positives on the benign track, most injections flagged.
+    rows = [
+        {**asdict(run_agent(scenario, "mock", track, defense)), "track": track}
+        for scenario in load_scenarios()
+        for defense in ("llm_detector", "stack")
+        for track in ("attack", "benign")
+    ]
+    metrics = compute_metrics(rows)
+    for defense in ("llm_detector", "stack"):
+        values = metrics[("mock-v1", defense)]
+        assert values["detector_fpr"] == 0.0
+        assert 0.8 <= values["detector_tpr"] < 1.0  # dos_flood's payload has no keyword

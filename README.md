@@ -116,7 +116,7 @@ $ uv run python -m gumiho.report --runs results/runs/smoke.jsonl --out results/r
 
 In that run the mock follows the injected `send_email` instruction: attack success is true with `none` and false with `egress_filter` (the call is blocked, `defense_events.egress_blocked == ["send_email"]`).
 
-The `mock` model needs no API key and makes no network calls. It follows any `INSTRUCTION: Call tool X with arguments: {...}` line in the latest tool output and otherwise returns a fixed answer, so its numbers exercise the pipeline and say nothing about real models. CI runs the full mock matrix (576 cells) on every pull request and push to `main` and checks that no provider SDK was imported.
+The `mock` model needs no API key and makes no network calls. It follows any `INSTRUCTION: Call tool X with arguments: {...}` line in the latest tool output and otherwise returns a fixed answer, so its numbers exercise the pipeline and say nothing about real models. As the `llm_detector`, the mock flags a tool output when it contains one of a few injection phrases (`INSTRUCTION:`, `call tool`, `ignore the ...`, `disregard`, `in/from the final answer`, `refuse the user`); on the mock matrix that gives detector TPR 97.9% (the `dos_flood` payload has none of them) and FPR 0%. CI runs the full mock matrix (576 cells) on every pull request and push to `main` and checks that no provider SDK was imported.
 
 Real models (`sonnet`, `gpt-4.1`) read `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` (see `.env.example`). Check the cost first:
 
@@ -145,7 +145,7 @@ The estimate assumes 1,000 input and 1,000 output tokens per cell and excludes j
 ## Reproducibility
 
 - Each record stores `bench_version`, the provider `model` snapshot id, `prompt_hash` (SHA-256 of the initial messages), and the full step transcript.
-- `run_id` = SHA-1 of (scenario id, channel, model id, defense, track, seed). Re-running the same command appends only missing or previously errored cells.
+- `run_id` = SHA-1 of (scenario id, channel, model id, defense, track, seed, scenario content hash). The content hash covers every scenario field, the payload template, and the bytes of each fixture file, so editing a scenario makes its cells new. Re-running the same command appends only missing or previously errored cells; records from before an edit stay in the file with their old `run_id`.
 - Temperature is 0. `--seed` is a replicate index: it is part of `run_id` and is passed to OpenAI's `seed` parameter; Anthropic has no seed parameter, so repeated seeds there measure sampling variance at temperature 0.
 - With `--concurrency > 1`, line order in the JSONL varies between runs; outcomes do not (tested for the mock in `tests/test_harness_integrity.py`). `timestamp` and `latency_s` always vary.
 - Protocol details: `docs/methodology.md`. Design notes: `PLAN.md`.
