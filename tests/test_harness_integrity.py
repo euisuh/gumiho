@@ -93,10 +93,13 @@ def test_seed_is_forwarded_to_openai(monkeypatch):
 
     class FakeOpenAI:
         def __init__(self, **kwargs):
-            create = lambda **kw: sent.update(kw) or types.SimpleNamespace(
-                choices=[types.SimpleNamespace(message=types.SimpleNamespace(content="ok", tool_calls=None))],
-                usage=types.SimpleNamespace(prompt_tokens=1, completion_tokens=1),
-            )
+            def create(**kw):
+                sent.update(kw)
+                return types.SimpleNamespace(
+                    choices=[types.SimpleNamespace(message=types.SimpleNamespace(content="ok", tool_calls=None))],
+                    usage=types.SimpleNamespace(prompt_tokens=1, completion_tokens=1),
+                )
+
             self.chat = types.SimpleNamespace(completions=types.SimpleNamespace(create=create))
 
     monkeypatch.setattr(openai, "OpenAI", FakeOpenAI)
