@@ -77,7 +77,8 @@ def _llm_judge(result: RunResult, scenario: Scenario) -> Verdict:
 def _calls(result: RunResult):
     for step in result.steps:
         for call in step.tool_calls or []:
-            yield call
+            if not call.get("blocked"):
+                yield call
 
 
 def _evaluate(result: RunResult, rule: dict) -> tuple[bool, str]:
