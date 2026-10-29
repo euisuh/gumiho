@@ -3,7 +3,9 @@ from __future__ import annotations
 import hashlib
 import json
 import time
+from dataclasses import asdict
 from datetime import UTC, datetime
+from pathlib import Path
 
 from gumiho import __version__
 from gumiho.defenses import DEFENSES, EGRESS_REFUSAL, REDACTION_NOTICE, configure_defense
@@ -15,8 +17,22 @@ from gumiho.types import RunResult, Scenario, Step
 MAX_ITERATIONS = 8
 
 
+def scenario_hash(scenario: Scenario) -> str:
+    """Hash of the resolved scenario: every field, payload, and fixture bytes (not paths)."""
+    data = asdict(scenario)
+    data["fixtures"] = {
+        tool: hashlib.sha256(Path(path).read_bytes()).hexdigest()
+        for tool, path in scenario.fixtures.items()
+    }
+    return hashlib.sha256(json.dumps(data, sort_keys=True).encode()).hexdigest()
+
+
 def make_run_id(scenario: Scenario, model: str, defense: str, track: str, seed: int) -> str:
-    key = (scenario.id, f"channel={scenario.injection['channel']}", MODELS[model][1], defense, track, seed)
+    # The content hash makes an edited scenario a new cell, so resume reruns it.
+    key = (
+        scenario.id, f"channel={scenario.injection['channel']}", MODELS[model][1],
+        defense, track, seed, scenario_hash(scenario),
+    )
     return hashlib.sha1(json.dumps(key).encode(), usedforsecurity=False).hexdigest()
 
 

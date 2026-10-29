@@ -135,18 +135,13 @@ def configure_defense(
 
         def detect(tool: str, content: str) -> str | None:
             try:
-                detector_tools = [] if detector_model != "mock" else [{
-                    "name": "classify",
-                    "description": "Return classification.",
-                    "parameters": {"type": "object", "properties": {}},
-                }]
                 response = chat(
                     detector_model,
                     [
                         {"role": "system", "content": DETECTOR_PROMPT},
                         {"role": "user", "content": f"Tool: {tool}\nOutput:\n{content}"},
                     ],
-                    detector_tools,
+                    [],
                 )
                 clean = response.text.strip().upper() == "CLEAN"
             except Exception as error:
