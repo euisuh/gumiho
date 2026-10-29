@@ -16,6 +16,11 @@ from gumiho.types import RunResult, Scenario, Step
 MAX_ITERATIONS = 8
 
 
+def make_run_id(scenario: Scenario, model: str, defense: str, track: str, seed: int) -> str:
+    key = (scenario.id, f"channel={scenario.injection['channel']}", MODELS[model][1], defense, track, seed)
+    return hashlib.sha1(json.dumps(key).encode(), usedforsecurity=False).hexdigest()
+
+
 def run_agent(
     scenario: Scenario,
     model: str,
@@ -41,11 +46,9 @@ def run_agent(
     prompt_hash = "sha256:" + hashlib.sha256(
         json.dumps(messages, sort_keys=True).encode()
     ).hexdigest()
-    run_key = (scenario.id, f"channel={scenario.injection['channel']}", model_id, defense, track, seed)
-    run_id = hashlib.sha1(json.dumps(run_key).encode(), usedforsecurity=False).hexdigest()
     result = RunResult(
         bench_version=__version__,
-        run_id=run_id,
+        run_id=make_run_id(scenario, model, defense, track, seed),
         scenario_id=scenario.id,
         variant=f"channel={scenario.injection['channel']}",
         category=scenario.category,
@@ -68,7 +71,7 @@ def run_agent(
 
     started = time.perf_counter()
     for _ in range(MAX_ITERATIONS):
-        response = chat(model, messages, schemas, temperature=0.0)
+        response = chat(model, messages, schemas, temperature=0.0, seed=seed)
         result.usage["input_tokens"] += response.usage.get("input_tokens", 0)
         result.usage["output_tokens"] += response.usage.get("output_tokens", 0)
         calls = [{"name": call.name, "args": call.args} for call in response.tool_calls]
@@ -84,6 +87,7 @@ def run_agent(
         for i, call in enumerate(response.tool_calls):
             if hooks.check_tool_call and not hooks.check_tool_call(call.name, call.args):
                 content, injected = EGRESS_REFUSAL.format(tool=call.name), False
+                calls[i]["blocked"] = True  # judge ignores calls that never executed
                 if defense == "stack":
                     content = DEFENSES["spotlight_datamark"].wrap_tool_output(call.name, content)
                     content = DEFENSES["delimiting"].wrap_tool_output(call.name, content)
