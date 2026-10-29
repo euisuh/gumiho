@@ -12,7 +12,6 @@ from gumiho.models import MODELS, chat
 from gumiho.tools import execute_tool, tool_specs
 from gumiho.types import RunResult, Scenario, Step
 
-
 MAX_ITERATIONS = 8
 
 
