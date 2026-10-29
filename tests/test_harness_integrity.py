@@ -1,5 +1,6 @@
 """Regression tests for scoring, resume, and attack/benign separation."""
 import json
+from dataclasses import replace
 from pathlib import Path
 
 import gumiho.run as runner
@@ -105,3 +106,35 @@ def test_seed_is_forwarded_to_openai(monkeypatch):
     monkeypatch.setattr(openai, "OpenAI", FakeOpenAI)
     assert chat("gpt-4.1", [{"role": "user", "content": "hi"}], [], seed=7).text == "ok"
     assert sent["seed"] == 7
+
+
+def test_editing_scenario_content_changes_run_id(tmp_path):
+    scenario = load_scenario("exfil_email_canary")
+    base = make_run_id(scenario, "mock", "none", "attack", 0)
+    fixture = tmp_path / "landlord.txt"
+    fixture.write_text(Path(scenario.fixtures["read_email"]).read_text() + "\nP.S.")
+    edits = [
+        replace(scenario, injection={**scenario.injection, "placement": "end"}),
+        replace(scenario, injection={**scenario.injection, "vars": {**scenario.injection["vars"], "canary": "CANARY-0000"}}),
+        replace(scenario, payload=replace(scenario.payload, template=scenario.payload.template + " now")),
+        replace(scenario, fixtures={"read_email": str(fixture)}),
+        replace(scenario, user_task=scenario.user_task + "!"),
+    ]
+    ids = {make_run_id(edited, "mock", "none", "attack", 0) for edited in edits}
+    assert base not in ids and len(ids) == len(edits)
+    # Same content at a different path (another checkout) keeps the id.
+    same = tmp_path / "same.txt"
+    same.write_text(Path(scenario.fixtures["read_email"]).read_text())
+    assert make_run_id(replace(scenario, fixtures={"read_email": str(same)}), "mock", "none", "attack", 0) == base
+
+
+def test_resume_reruns_an_edited_scenario(tmp_path, monkeypatch, capsys):
+    scenario = load_scenario("exfil_email_canary")
+    output = tmp_path / "runs.jsonl"
+    args = ["--scenario", scenario.id, "--model", "mock", "--out", str(output)]
+    assert runner.main(args) == 0
+    edited = replace(scenario, injection={**scenario.injection, "placement": "end"})
+    monkeypatch.setattr(runner, "load_scenario", lambda _name: edited)
+    capsys.readouterr()
+    assert runner.main(args) == 0
+    assert "0 skipped; 1 completed" in capsys.readouterr().out
