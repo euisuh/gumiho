@@ -8,7 +8,6 @@ from typing import NamedTuple
 from gumiho.models import MODELS, chat
 from gumiho.types import Scenario
 
-
 MARKER = "░"
 CLOSING_TAG = "</untrusted_tool_output>"
 DETECTOR_MODEL = "gpt-4.1"
