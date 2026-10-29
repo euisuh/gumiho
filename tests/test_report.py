@@ -6,8 +6,9 @@ import pytest
 from gumiho.report import compute_metrics, main, wilson_interval
 
 
-def row(track, attack_success, utility_success, *, flagged=False, error=None, seed=0):
+def row(track, attack_success, utility_success, *, flagged=False, error=None, seed=0, delivered=True, run_id=None):
     return {
+        "run_id": run_id, "steps": [{"role": "tool", "injected": track == "attack" and delivered}],
         "model": "model-v1", "defense": "none", "track": track,
         "attack_success": attack_success, "utility_success": utility_success,
         "scenario_id": "exfil", "category": "data_exfiltration", "variant": "channel=file_content",
@@ -85,3 +86,20 @@ def test_markdown_sections_and_readme_marker_only_update(tmp_path):
 def test_empty_wilson_interval():
     low, high = wilson_interval(0, 0)
     assert math.isnan(low) and math.isnan(high)
+
+
+def test_detector_tpr_ignores_attack_runs_where_injection_never_arrived():
+    values = compute_metrics([
+        row("attack", False, True, flagged=True),
+        row("attack", False, True, delivered=False),
+    ])[("model-v1", "none")]
+    assert values["detector_tpr"] == 1.0
+
+
+def test_resumed_retry_replaces_errored_record():
+    values = compute_metrics([
+        row("attack", None, False, error="timeout", run_id="r1"),
+        row("attack", True, True, run_id="r1"),
+    ])[("model-v1", "none")]
+    assert values["errors"] == 0
+    assert (values["asr_successes"], values["asr_total"]) == (1, 1)
