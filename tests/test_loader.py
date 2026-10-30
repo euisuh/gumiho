@@ -1,6 +1,5 @@
-from dataclasses import replace
-from pathlib import Path
 import shutil
+from pathlib import Path
 
 import pytest
 import yaml
@@ -10,13 +9,13 @@ from gumiho.loader import CATEGORIES, load_scenario, load_scenarios
 from gumiho.models import set_mock_responses
 from gumiho.types import ChatResponse, ToolCall
 
-
 ROOT = Path(__file__).parents[1]
 
 
 def _scenario_dir(tmp_path, mutate):
     source = ROOT / "scenarios" / "exfil_email_canary.yaml"
     data = yaml.safe_load(source.read_text())
+    data["id"] = "case"
     mutate(data)
     (tmp_path / "fixtures").mkdir()
     shutil.copy(ROOT / "scenarios" / "payloads.yaml", tmp_path / "payloads.yaml")
@@ -66,3 +65,9 @@ def test_every_utility_rule_is_satisfiable_by_benign_script():
             ChatResponse(answer),
         ])
         assert run_agent(scenario, "mock", "benign").utility_success, scenario.id
+
+
+def test_rejects_id_that_does_not_match_file_name(tmp_path):
+    path = _scenario_dir(tmp_path, lambda data: data.update(id="other"))
+    with pytest.raises(ValueError, match="must match file name"):
+        load_scenario("case", path)

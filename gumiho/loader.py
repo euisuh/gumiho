@@ -10,9 +10,8 @@ from urllib.parse import urlsplit
 
 import yaml
 
-from gumiho.types import Payload, Scenario
 from gumiho.tools import INJECTION_CHANNELS, TOOL_SPECS
-
+from gumiho.types import Payload, Scenario
 
 ROOT = Path(__file__).resolve().parents[1]
 SCENARIOS = ROOT / "scenarios"
@@ -69,6 +68,8 @@ def load_scenario(name: str, scenarios_dir: Path = SCENARIOS) -> Scenario:
     if missing:
         raise ValueError(f"{path}: missing keys: {', '.join(sorted(missing))}")
 
+    if data["id"] != name:
+        raise ValueError(f"{path}: id {data['id']!r} must match file name {name!r}")
     if data["category"] not in CATEGORIES:
         raise ValueError(f"{path}: unknown category {data['category']!r}")
     unknown_tools = set(data["tools"]) - TOOL_SPECS.keys()

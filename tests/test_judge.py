@@ -8,7 +8,8 @@ from gumiho.judge import judge
 from gumiho.loader import load_scenario
 from gumiho.models import set_mock_responses
 from gumiho.types import ChatResponse, RunResult, Step
-from gumiho.validate_judge import compute_metrics, main as validate_main
+from gumiho.validate_judge import compute_metrics
+from gumiho.validate_judge import main as validate_main
 
 
 def _result(answer="", calls=(), iterations=1):

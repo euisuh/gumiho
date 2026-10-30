@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import itertools
 import json
 import time
@@ -11,12 +10,11 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from gumiho import __version__
-from gumiho.agent import run_agent
+from gumiho.agent import make_run_id, run_agent
 from gumiho.defenses import DEFENSES
 from gumiho.loader import load_scenario, load_scenarios
 from gumiho.models import MODELS
 from gumiho.types import RunResult, Scenario
-
 
 DRY_RUN_TOKENS = 1_000
 RETRY_DELAYS = (1, 2)
@@ -29,18 +27,13 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--defense", choices=(*DEFENSES, "all"), default="none", help="defense name")
     result.add_argument("--track", choices=("attack", "benign", "both"), default="attack", help="run track")
     result.add_argument("--out", type=Path, default=Path("results/runs/run.jsonl"), help="output JSONL path")
-    result.add_argument("--limit", type=int, help="maximum runs")
-    result.add_argument("--seed", type=int, default=0, help="random seed")
+    result.add_argument("--limit", type=int, help="maximum scenario run-units (before model/defense/track expansion)")
+    result.add_argument("--seed", type=int, default=0, help="replicate index; passed to providers that accept a seed (OpenAI)")
     result.add_argument("--concurrency", type=int, default=4, help="maximum concurrent cells (default: 4)")
     result.add_argument("--max-usd", type=float, help="abort after estimated cumulative cost exceeds USD limit")
     result.add_argument("--dry-run", action="store_true", help="print cell count and estimated cost without API calls")
     result.add_argument("--strict", action="store_true", help="exit nonzero if any cell fails")
     return result
-
-
-def _run_id(scenario: Scenario, model: str, defense: str, track: str, seed: int) -> str:
-    key = (scenario.id, f"channel={scenario.injection['channel']}", MODELS[model][1], defense, track, seed)
-    return hashlib.sha1(json.dumps(key).encode(), usedforsecurity=False).hexdigest()
 
 
 def _existing(path: Path) -> tuple[set[str], float]:
@@ -53,8 +46,8 @@ def _existing(path: Path) -> tuple[set[str], float]:
                 record = json.loads(line)
             except json.JSONDecodeError:
                 continue
-            if record.get("run_id"):
-                ids.add(record["run_id"])
+            if record.get("run_id") and record.get("error") is None:
+                ids.add(record["run_id"])  # errored cells are retried on resume
             cost += record.get("usage", {}).get("usd", 0.0)
     return ids, cost
 
@@ -67,7 +60,7 @@ def _estimated_cost(cells: list[tuple[Scenario, str, str, str]], seed: int) -> f
 def _error_result(cell: tuple[Scenario, str, str, str], seed: int, error: Exception) -> RunResult:
     scenario, model, defense, track = cell
     return RunResult(
-        __version__, _run_id(scenario, model, defense, track, seed), scenario.id,
+        __version__, make_run_id(scenario, model, defense, track, seed), scenario.id,
         f"channel={scenario.injection['channel']}", scenario.category, track,
         MODELS[model][1], model, defense, seed,
         datetime.now(UTC).isoformat().replace("+00:00", "Z"), "", [], "", None,
@@ -118,7 +111,7 @@ def main(argv: list[str] | None = None) -> int:
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     done, cost = _existing(args.out)
-    pending = [cell for cell in cells if _run_id(*cell, args.seed) not in done]
+    pending = [cell for cell in cells if make_run_id(*cell, args.seed) not in done]
     skipped = len(cells) - len(pending)
     errors = 0
     aborted = False

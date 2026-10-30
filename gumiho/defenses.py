@@ -8,7 +8,6 @@ from typing import NamedTuple
 from gumiho.models import MODELS, chat
 from gumiho.types import Scenario
 
-
 MARKER = "░"
 CLOSING_TAG = "</untrusted_tool_output>"
 DETECTOR_MODEL = "gpt-4.1"
@@ -100,18 +99,13 @@ def configure_defense(
 
         def detect(tool: str, content: str) -> str | None:
             try:
-                detector_tools = [] if detector_model != "mock" else [{
-                    "name": "classify",
-                    "description": "Return classification.",
-                    "parameters": {"type": "object", "properties": {}},
-                }]
                 response = chat(
                     detector_model,
                     [
                         {"role": "system", "content": DETECTOR_PROMPT},
                         {"role": "user", "content": f"Tool: {tool}\nOutput:\n{content}"},
                     ],
-                    detector_tools,
+                    [],
                 )
                 clean = response.text.strip().upper() == "CLEAN"
             except Exception as error:

@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 import re
+from pathlib import Path
 from typing import Any
 
 from gumiho.types import Scenario
-
 
 INJECTION_CHANNELS = (
     "web_search_result",
