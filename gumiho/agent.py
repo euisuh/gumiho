@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from gumiho import __version__
-from gumiho.defenses import DEFENSES, EGRESS_REFUSAL, REDACTION_NOTICE, configure_defense
+from gumiho.defenses import EGRESS_REFUSAL, REDACTION_NOTICE, _datamark, _delimit, configure_defense
 from gumiho.judge import judge, utility_success
 from gumiho.models import MODELS, chat
 from gumiho.tools import execute_tool, tool_specs
@@ -104,8 +104,7 @@ def run_agent(
                 content, injected = EGRESS_REFUSAL.format(tool=call.name), False
                 calls[i]["blocked"] = True  # judge ignores calls that never executed
                 if defense == "stack":
-                    content = DEFENSES["spotlight_datamark"].wrap_tool_output(call.name, content)
-                    content = DEFENSES["delimiting"].wrap_tool_output(call.name, content)
+                    content = _delimit(call.name, _datamark(call.name, content))
             else:
                 content, injected = execute_tool(call.name, call.args, scenario, track)
                 if hooks.wrap_tool_output:

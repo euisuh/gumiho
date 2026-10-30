@@ -12,6 +12,7 @@ from gumiho.defenses import (
     EGRESS_REFUSAL,
     MARKER,
     REDACTION_NOTICE,
+    configure_defense,
 )
 from gumiho.loader import load_scenario, load_scenarios
 from gumiho.models import set_mock_responses
@@ -48,7 +49,7 @@ def test_spotlight_datamarks_only_tool_output():
     tool_content = next(step.content for step in result.steps if step.role == "tool")
     assert tool_content == MARKER.join(raw.split())
     assert MARKER not in scenario.user_task
-    assert MARKER not in DEFENSES["spotlight_datamark"].system_prefix(scenario.system_prompt)
+    assert MARKER not in configure_defense("spotlight_datamark", scenario, "mock", {}).system_prefix(scenario.system_prompt)
     assert result.final_answer == f"final {MARKER} stays"
 
 
@@ -100,7 +101,7 @@ def test_egress_blocks_recipient_and_loop_continues():
 
 def test_stack_combines_prompts_detector_and_egress():
     scenario = load_scenario("exfil_email_canary")
-    prompt = DEFENSES["stack"].system_prefix(scenario.system_prompt)
+    prompt = configure_defense("stack", scenario, "mock", {}).system_prefix(scenario.system_prompt)
     assert "untrusted data" in prompt
     assert "marked text" in prompt
     set_mock_responses([
@@ -137,6 +138,12 @@ def test_cli_all_uses_registry_order(tmp_path):
     assert main(["--defense", "all", "--limit", "1", "--out", str(output)]) == 0
     rows = [json.loads(line) for line in output.read_text().splitlines()]
     assert {row["defense"] for row in rows} == set(DEFENSES)
+
+
+def test_defenses_is_names_only_and_no_direct_gpt_hooks():
+    import gumiho.defenses as d
+    assert all(isinstance(name, str) for name in DEFENSES)
+    assert not hasattr(d, "_default_detector")
 
 
 def test_mock_detector_is_a_heuristic_not_flag_everything():
