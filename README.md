@@ -1,6 +1,6 @@
 # Gumiho
 
-Named for the nine-tailed fox of Korean folklore, which deceives by taking another form, like an instruction hidden in tool output. Formerly `agent-injection-bench`.
+Named for the nine-tailed fox of Korean folklore, which deceives by taking another form, like an instruction hidden in tool output.
 
 Gumiho is a red-team benchmark for indirect prompt injection against tool-using LLM agents. It measures how often instructions planted in tool output change what the agent does, and what common mitigations cost in benign task success.
 
@@ -148,8 +148,10 @@ The estimate assumes 1,000 input and 1,000 output tokens per cell and excludes j
 - `run_id` = SHA-1 of (scenario id, channel, model id, defense, track, seed, scenario content hash). The content hash covers every scenario field, the payload template, and the bytes of each fixture file, so editing a scenario makes its cells new. Re-running the same command appends only missing or previously errored cells; records from before an edit stay in the file with their old `run_id`.
 - Temperature is 0. `--seed` is a replicate index: it is part of `run_id` and is passed to OpenAI's `seed` parameter; Anthropic has no seed parameter, so repeated seeds there measure sampling variance at temperature 0.
 - With `--concurrency > 1`, line order in the JSONL varies between runs; outcomes do not (tested for the mock in `tests/test_harness_integrity.py`). `timestamp` and `latency_s` always vary.
-- Protocol details: `docs/methodology.md`. Design notes: `PLAN.md`.
+- Protocol details: `docs/methodology.md`. Design notes: `[plan](docs/PLAN.md)`.
 
 ## License
 
 MIT
+
+Formerly known as `agent-injection-bench`.
