@@ -113,7 +113,7 @@ technique demonstrations, not exploits against any named product.
 ```
 gumiho/
 ├── README.md                  # short pitch + headline leaderboard table (generated)
-├── PLAN.md                    # this file
+├── docs/PLAN.md               # this file
 ├── LICENSE                    # MIT
 ├── pyproject.toml             # uv/pip installable, deps: anthropic, openai, pyyaml, pytest
 ├── .env.example                # ANTHROPIC_API_KEY, OPENAI_API_KEY, GROQ_API_KEY
@@ -261,7 +261,7 @@ JSON out. Everything after layers onto a harness that stays green.
 > *"Repo: `gumiho` — a Python
 > benchmark measuring indirect prompt injection against tool-using LLM agents
 > (malicious instructions hidden in tool output) and the effectiveness of
-> mitigations. Python 3.12+, `uv`, `pytest`. Read `PLAN.md` §3 for the repo
+> mitigations. Python 3.12+, `uv`, `pytest`. Read `docs/PLAN.md` §3 for the repo
 > layout, data schemas, and core abstractions before writing code; follow them
 > exactly. Do not add dependencies beyond those in `pyproject.toml`. Do not add
 > abstractions the plan does not call for. All tests must pass offline using the
